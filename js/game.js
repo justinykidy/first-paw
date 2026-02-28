@@ -253,11 +253,11 @@
         this.audio.move();
       }
 
-      if (this.chess.isCheck()) {
+      if (this.chess.in_check()) {
         this.audio.check();
       }
 
-      if (this.chess.isGameOver()) {
+      if (this.chess.game_over()) {
         this.finishGame();
         return;
       }
@@ -359,20 +359,20 @@
     finishGame() {
       this.gameOver = true;
 
-      if (this.chess.isCheckmate()) {
+      if (this.chess.in_checkmate()) {
         const winner = this.chess.turn() === 'w' ? 'Black' : 'White';
         const playerWon = (winner === 'White' && this.playerColor === 'w') || (winner === 'Black' && this.playerColor === 'b');
         const text = playerWon ? 'VICTORY' : 'DEFEAT';
         this.statusMessage = `Checkmate. ${winner} wins.`;
         this.effects.triggerCheckmate(text);
         this.audio.checkmate();
-      } else if (this.chess.isStalemate()) {
+      } else if (this.chess.in_stalemate()) {
         this.statusMessage = 'Draw by stalemate.';
-      } else if (this.chess.isThreefoldRepetition()) {
+      } else if (this.chess.in_threefold_repetition()) {
         this.statusMessage = 'Draw by repetition.';
-      } else if (this.chess.isInsufficientMaterial()) {
+      } else if (this.chess.insufficient_material()) {
         this.statusMessage = 'Draw by insufficient material.';
-      } else if (this.chess.isDraw()) {
+      } else if (this.chess.in_draw()) {
         this.statusMessage = 'Draw.';
       }
 
@@ -409,7 +409,7 @@
       }
 
       const turn = this.chess.turn() === 'w' ? 'White' : 'Black';
-      const checkText = this.chess.isCheck() ? ' CHECK!' : '';
+      const checkText = this.chess.in_check() ? ' CHECK!' : '';
       this.statusBar.innerHTML = `${this.statusMessage || `${turn} to move.`}<span class="check-status">${checkText}</span>`;
       this.statusMessage = '';
     }
@@ -558,7 +558,7 @@
         this.highlightSquare(this.selected, 'rgba(141, 206, 255, 0.24)');
       }
 
-      if (this.chess.isCheck()) {
+      if (this.chess.in_check()) {
         const kingSquare = this.findKingSquare(this.chess.turn());
         if (kingSquare) {
           const pulse = (Math.sin(now / 120) + 1) / 2;
