@@ -167,6 +167,17 @@
       this.update(dt, viewWidth, viewHeight);
       this.renderOverlay(ctx, viewWidth, viewHeight);
     }
+
+    reset() {
+      this.particles = [];
+      this.flashes = [];
+      this.shakeUntil = 0;
+      this.shakeMagnitude = 0;
+      this.fullScreenFlash = 0;
+      this.mateEffect = null;
+      this.showerTimer = 0;
+      this.lastUpdate = this.now();
+    }
   }
 
   window.EffectsManager = EffectsManager;

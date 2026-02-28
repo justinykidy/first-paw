@@ -42,6 +42,7 @@
       this.aiThinking = false;
       this.gameOver = false;
       this.statusMessage = '';
+      this.gameId = 0;
 
       this.canvas = document.getElementById('chess-canvas');
       this.ctx = this.canvas.getContext('2d');
@@ -55,6 +56,7 @@
 
       this.squareSize = 0;
       this.boardSize = 0;
+      this.boardTexture = null;
 
       this.bindUI();
       this.resizeCanvas();
@@ -118,6 +120,7 @@
     }
 
     startNewGame() {
+      this.invalidateGameState();
       this.chess = new Chess();
       this.selected = null;
       this.validMoves = [];
@@ -152,10 +155,15 @@
       }
 
       if (undone) {
+        this.invalidateGameState();
         this.rebuildCapturedFromHistory();
         this.selected = null;
         this.validMoves = [];
         this.lastMove = null;
+        this.animation = null;
+        if (typeof this.effects.reset === 'function') {
+          this.effects.reset();
+        }
         this.gameOver = false;
         this.statusMessage = 'Move undone.';
         this.updateMoveHistory();
@@ -168,6 +176,7 @@
         return;
       }
 
+      this.invalidateGameState();
       this.gameOver = true;
       this.statusMessage = 'You resigned. Defeat.';
       this.effects.triggerCheckmate('DEFEAT');
@@ -256,7 +265,7 @@
       if (!byAI && this.chess.turn() === this.aiColor) {
         this.aiThinking = true;
         this.updateStatus('AI is thinking...');
-        await this.playAIMove();
+        await this.playAIMove(this.gameId);
       }
     }
 
@@ -289,7 +298,11 @@
       this.updateCapturedUI();
     }
 
-    async playAIMove() {
+    async playAIMove(expectedGameId = this.gameId) {
+      if (expectedGameId !== this.gameId) {
+        return;
+      }
+
       const difficulty = DIFFICULTY[this.currentDifficulty];
       const legalMoves = this.chess.moves({ verbose: true });
 
@@ -301,17 +314,20 @@
       if (Math.random() < difficulty.randomMistakeChance) {
         const randomMove = legalMoves[Math.floor(Math.random() * legalMoves.length)];
         await this.wait(320);
+        if (expectedGameId !== this.gameId) {
+          return;
+        }
         await this.playMove({ from: randomMove.from, to: randomMove.to, promotion: randomMove.promotion }, true);
-        this.aiThinking = false;
-        this.updateStatus();
         return;
       }
 
       const depth = this.randomDepth(difficulty.minDepth, difficulty.maxDepth);
       try {
         const best = await this.ai.getBestMove(this.chess.fen(), depth);
+        if (expectedGameId !== this.gameId) {
+          return;
+        }
         if (!best || best === '(none)') {
-          this.aiThinking = false;
           return;
         }
 
@@ -320,13 +336,24 @@
         const promotion = best.length > 4 ? best[4] : undefined;
         await this.playMove({ from, to, promotion }, true);
       } catch (err) {
+        if (expectedGameId !== this.gameId) {
+          return;
+        }
         console.error('AI move error:', err);
         const fallback = legalMoves[Math.floor(Math.random() * legalMoves.length)];
         await this.playMove({ from: fallback.from, to: fallback.to, promotion: fallback.promotion }, true);
       } finally {
-        this.aiThinking = false;
-        this.updateStatus();
+        if (expectedGameId === this.gameId) {
+          this.aiThinking = false;
+          this.updateStatus();
+        }
       }
+    }
+
+    invalidateGameState() {
+      this.gameId += 1;
+      this.aiThinking = false;
+      this.ai.stop();
     }
 
     finishGame() {
@@ -466,20 +493,25 @@
       this.squareSize = this.boardSize / 8;
       this.canvas.width = Math.floor(this.boardSize * pixelRatio);
       this.canvas.height = Math.floor(this.boardSize * pixelRatio);
+      this.canvas.style.width = `${this.boardSize}px`;
       this.canvas.style.height = `${this.boardSize}px`;
       this.ctx.setTransform(pixelRatio, 0, 0, pixelRatio, 0, 0);
+      this.rebuildBoardTexture();
     }
 
-    drawBoard(now) {
-      const ctx = this.ctx;
+    rebuildBoardTexture() {
+      const texture = document.createElement('canvas');
+      texture.width = this.boardSize;
+      texture.height = this.boardSize;
+      const tctx = texture.getContext('2d');
       const tile = this.squareSize;
+
       for (let rank = 0; rank < 8; rank += 1) {
         for (let file = 0; file < 8; file += 1) {
           const isLight = (file + rank) % 2 === 0;
           const x = file * tile;
           const y = rank * tile;
-
-          const grad = ctx.createLinearGradient(x, y, x + tile, y + tile);
+          const grad = tctx.createLinearGradient(x, y, x + tile, y + tile);
           if (isLight) {
             grad.addColorStop(0, '#7a5f3f');
             grad.addColorStop(1, '#8f704b');
@@ -487,18 +519,27 @@
             grad.addColorStop(0, '#4e3a24');
             grad.addColorStop(1, '#3f2f1d');
           }
+          tctx.fillStyle = grad;
+          tctx.fillRect(x, y, tile, tile);
 
-          ctx.fillStyle = grad;
-          ctx.fillRect(x, y, tile, tile);
-
-          ctx.fillStyle = 'rgba(255,255,255,0.02)';
+          tctx.fillStyle = 'rgba(255,255,255,0.02)';
           for (let n = 0; n < 3; n += 1) {
             const noiseX = x + Math.random() * tile;
             const noiseY = y + Math.random() * tile;
-            ctx.fillRect(noiseX, noiseY, 1, 1);
+            tctx.fillRect(noiseX, noiseY, 1, 1);
           }
         }
       }
+
+      this.boardTexture = texture;
+    }
+
+    drawBoard(now) {
+      const ctx = this.ctx;
+      if (!this.boardTexture) {
+        this.rebuildBoardTexture();
+      }
+      ctx.drawImage(this.boardTexture, 0, 0, this.boardSize, this.boardSize);
 
       if (this.lastMove) {
         this.highlightSquare(this.lastMove.from, 'rgba(255, 215, 79, 0.26)');
