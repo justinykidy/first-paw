@@ -1,0 +1,74 @@
+<!doctype html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>Neon Chess</title>
+  <link rel="preconnect" href="https://fonts.googleapis.com">
+  <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+  <link href="https://fonts.googleapis.com/css2?family=Cinzel:wght@500;700&family=Manrope:wght@400;600;700&display=swap" rel="stylesheet">
+  <link rel="stylesheet" href="css/style.css">
+  <script src="https://cdn.jsdelivr.net/npm/chess.js@1.4.0/dist/chess.js"></script>
+  <script src="js/audio.js" defer></script>
+  <script src="js/effects.js" defer></script>
+  <script src="js/ai.js" defer></script>
+  <script src="js/game.js" defer></script>
+</head>
+<body>
+  <div id="app">
+    <section id="start-screen" class="screen active">
+      <div class="start-card">
+        <h1>Neon Chess</h1>
+        <p>Choose AI difficulty</p>
+        <div class="difficulty-grid">
+          <button class="difficulty-btn" data-level="easy">Easy</button>
+          <button class="difficulty-btn" data-level="normal">Normal</button>
+          <button class="difficulty-btn" data-level="hard">Hard</button>
+          <button class="difficulty-btn danger" data-level="hell">Hell</button>
+        </div>
+      </div>
+    </section>
+
+    <section id="game-screen" class="screen">
+      <div class="game-shell">
+        <aside class="panel left-panel">
+          <h2>Captured Pieces</h2>
+          <div class="captured-block">
+            <h3>You Captured</h3>
+            <div id="captured-by-white" class="captured-row"></div>
+          </div>
+          <div class="captured-block">
+            <h3>AI Captured</h3>
+            <div id="captured-by-black" class="captured-row"></div>
+          </div>
+        </aside>
+
+        <main class="center-panel">
+          <div id="board-wrapper">
+            <canvas id="chess-canvas" width="720" height="720"></canvas>
+            <div id="promotion-overlay" class="hidden" aria-hidden="true">
+              <div class="promotion-card">
+                <p>Promote pawn to:</p>
+                <div id="promotion-options" class="promotion-options"></div>
+              </div>
+            </div>
+          </div>
+          <div class="status-controls">
+            <div id="status-bar">Pick a difficulty to start.</div>
+            <div class="controls">
+              <button id="new-game-btn">New Game</button>
+              <button id="undo-btn">Undo</button>
+              <button id="resign-btn">Resign</button>
+            </div>
+          </div>
+        </main>
+
+        <aside class="panel right-panel">
+          <h2>Move History</h2>
+          <div id="move-history" class="move-history"></div>
+        </aside>
+      </div>
+    </section>
+  </div>
+</body>
+</html>
