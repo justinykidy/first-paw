@@ -4,6 +4,7 @@ import type { Chess } from 'chess.js';
 export type Difficulty = 'easy' | 'medium' | 'hard' | 'hell';
 export type TimerMode = '3min' | '5min' | '10min' | 'unlimited';
 export type GameStatus = 'idle' | 'playing' | 'check' | 'checkmate' | 'stalemate' | 'draw' | 'timeout';
+export type GameEndReason = 'checkmate' | 'stalemate' | 'draw' | 'resign' | 'timeout';
 
 export interface HintData {
   from: string;
@@ -55,6 +56,8 @@ export interface GameState {
   currentHint: HintData | null;
   moveHistory: string[];
   status: GameStatus;
+  winner: 'w' | 'b' | null;
+  endReason: GameEndReason | null;
   selectedSquare: string | null;
   validMoves: string[];
   lastMove: { from: string; to: string } | null;

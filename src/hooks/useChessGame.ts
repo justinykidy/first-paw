@@ -3,7 +3,7 @@ import { useCallback, useEffect, useMemo, useRef, useState } from 'react';
 
 import { useStockfish } from './useStockfish';
 import { storage } from '../utils/storage';
-import type { Difficulty, GameState, GameStatus, SavedGame, TimerMode } from '../types';
+import type { Difficulty, GameEndReason, GameState, GameStatus, SavedGame, TimerMode } from '../types';
 
 // Core chess game state and actions, including AI and persistence.
 const TIMER_TO_MS: Record<TimerMode, number> = {
@@ -23,11 +23,17 @@ const isPromotionMove = (from: string, to: string, fen: string): boolean => {
   return (piece.color === 'w' && to[1] === '8') || (piece.color === 'b' && to[1] === '1');
 };
 
-const getResult = (chess: Chess, status: GameStatus): string => {
-  if (status === 'checkmate') {
-    return chess.turn() === 'w' ? '0-1' : '1-0';
+const getResult = (winner: 'w' | 'b' | null, endReason: GameEndReason | null): string => {
+  if (!endReason) {
+    return '*';
   }
-  if (status === 'draw' || status === 'stalemate' || status === 'timeout') {
+  if (winner === 'w') {
+    return '1-0';
+  }
+  if (winner === 'b') {
+    return '0-1';
+  }
+  if (endReason === 'draw' || endReason === 'stalemate') {
     return '1/2-1/2';
   }
   return '*';
@@ -49,6 +55,22 @@ const deriveStatus = (chess: Chess): GameStatus => {
   return 'playing';
 };
 
+const deriveEndState = (
+  chess: Chess,
+  status: GameStatus,
+): { winner: 'w' | 'b' | null; endReason: GameEndReason | null } => {
+  if (status === 'checkmate') {
+    return { winner: chess.turn() === 'w' ? 'b' : 'w', endReason: 'checkmate' };
+  }
+  if (status === 'stalemate') {
+    return { winner: null, endReason: 'stalemate' };
+  }
+  if (status === 'draw') {
+    return { winner: null, endReason: 'draw' };
+  }
+  return { winner: null, endReason: null };
+};
+
 const initialTimer = (mode: TimerMode): number => {
   return TIMER_TO_MS[mode];
 };
@@ -68,6 +90,8 @@ const defaultState = (): GameState => {
     currentHint: null,
     moveHistory: [],
     status: 'idle',
+    winner: null,
+    endReason: null,
     selectedSquare: null,
     validMoves: [],
     lastMove: null,
@@ -92,6 +116,8 @@ export function useChessGame(): {
   const { isReady, getBestMove, getHint } = useStockfish();
   const [gameState, setGameState] = useState<GameState>(defaultState);
   const gameRef = useRef(gameState);
+  const isAiThinkingRef = useRef(false);
+  const lastAiTurnFenRef = useRef<string | null>(null);
 
   useEffect(() => {
     gameRef.current = gameState;
@@ -114,18 +140,24 @@ export function useChessGame(): {
 
       if (playerTurn) {
         const nextTime = Math.max(0, prev.playerTimeMs - amount);
+        const didTimeout = nextTime <= 0;
         return {
           ...prev,
           playerTimeMs: nextTime,
-          status: nextTime <= 0 ? 'timeout' : prev.status,
+          status: didTimeout ? 'timeout' : prev.status,
+          winner: didTimeout ? (prev.playerColor === 'w' ? 'b' : 'w') : prev.winner,
+          endReason: didTimeout ? 'timeout' : prev.endReason,
         };
       }
 
       const nextTime = Math.max(0, prev.aiTimeMs - amount);
+      const didTimeout = nextTime <= 0;
       return {
         ...prev,
         aiTimeMs: nextTime,
-        status: nextTime <= 0 ? 'timeout' : prev.status,
+        status: didTimeout ? 'timeout' : prev.status,
+        winner: didTimeout ? prev.playerColor : prev.winner,
+        endReason: didTimeout ? 'timeout' : prev.endReason,
       };
     });
   }, []);
@@ -165,6 +197,7 @@ export function useChessGame(): {
         }
 
         const status = deriveStatus(chess);
+        const endState = deriveEndState(chess, status);
 
         return {
           ...prev,
@@ -175,6 +208,8 @@ export function useChessGame(): {
           currentHint: null,
           lastMove: { from: result.from, to: result.to },
           status,
+          winner: endState.winner,
+          endReason: endState.endReason,
           promotionPending: null,
         };
       });
@@ -212,6 +247,7 @@ export function useChessGame(): {
       }
 
       const status = deriveStatus(chess);
+      const endState = deriveEndState(chess, status);
       return {
         ...prev,
         chess,
@@ -221,20 +257,34 @@ export function useChessGame(): {
         lastMove: { from: moveResult.from, to: moveResult.to },
         currentHint: null,
         status,
+        winner: endState.winner,
+        endReason: endState.endReason,
         promotionPending: null,
       };
     });
   }, []);
 
   useEffect(() => {
-    const next = gameState;
-    if (next.status !== 'playing' && next.status !== 'check') {
+    if (gameState.status !== 'playing' && gameState.status !== 'check') {
+      lastAiTurnFenRef.current = null;
       return;
     }
-    if (next.chess.turn() === aiColor) {
-      void runAiTurn();
+    if (gameState.chess.turn() !== aiColor) {
+      lastAiTurnFenRef.current = null;
+      return;
     }
-  }, [aiColor, gameState, runAiTurn]);
+
+    const fen = gameState.chess.fen();
+    if (lastAiTurnFenRef.current === fen || isAiThinkingRef.current) {
+      return;
+    }
+
+    lastAiTurnFenRef.current = fen;
+    isAiThinkingRef.current = true;
+    void runAiTurn().finally(() => {
+      isAiThinkingRef.current = false;
+    });
+  }, [aiColor, gameState.chess, gameState.status, runAiTurn]);
 
   const startNewGame = useCallback((config: { difficulty: Difficulty; timer: TimerMode; playerColor: 'w' | 'b' }) => {
     const chess = new Chess();
@@ -249,6 +299,8 @@ export function useChessGame(): {
       currentHint: null,
       moveHistory: [],
       status: 'playing',
+      winner: null,
+      endReason: null,
       selectedSquare: null,
       validMoves: [],
       lastMove: null,
@@ -325,6 +377,8 @@ export function useChessGame(): {
         lastMove: null,
         promotionPending: null,
         status: 'playing',
+        winner: null,
+        endReason: null,
       };
     });
   }, []);
@@ -356,10 +410,18 @@ export function useChessGame(): {
   }, []);
 
   const resignGame = useCallback(() => {
-    setGameState((prev) => ({
-      ...prev,
-      status: 'checkmate',
-    }));
+    setGameState((prev) => {
+      if ((prev.status !== 'playing' && prev.status !== 'check') || prev.chess.turn() !== prev.playerColor) {
+        return prev;
+      }
+
+      return {
+        ...prev,
+        status: 'checkmate',
+        winner: prev.playerColor === 'w' ? 'b' : 'w',
+        endReason: 'resign',
+      };
+    });
   }, []);
 
   const saveGame = useCallback(() => {
@@ -369,7 +431,7 @@ export function useChessGame(): {
       pgn: snapshot.chess.pgn(),
       date: new Date().toISOString(),
       difficulty: snapshot.difficulty,
-      result: getResult(snapshot.chess, snapshot.status),
+      result: getResult(snapshot.winner, snapshot.endReason),
       playerColor: snapshot.playerColor,
     };
 
@@ -387,6 +449,8 @@ export function useChessGame(): {
     }
 
     const timer = storage.getSettings().lastTimer;
+    const status = deriveStatus(chess);
+    const endState = deriveEndState(chess, status);
     setGameState((prev) => ({
       ...prev,
       chess,
@@ -402,7 +466,8 @@ export function useChessGame(): {
       validMoves: [],
       lastMove: null,
       promotionPending: null,
-      status: deriveStatus(chess),
+      status,
+      ...endState,
     }));
   }, []);
 
