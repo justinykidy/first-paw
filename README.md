@@ -1,20 +1,59 @@
-# 🐱 first-paw
+# Fancy Chess
 
-캣과 저스틴의 첫 번째 프로젝트.
+Fancy Chess is a browser-only 3D chess game built with React, TypeScript, Three.js (R3F), and chess.js. It supports Stockfish AI, four difficulty levels, hints, undo, timers, saved PGN games, and persisted settings.
 
-## Agent System
+## Features
 
-이 프로젝트는 AI 에이전트 스웜으로 개발됩니다:
+- 3D chess board with interactive square selection and animated pieces
+- Stockfish AI (easy / medium / hard / hell)
+- Hint system with 3-use limit per game
+- Timer modes: 3 min, 5 min, 10 min, unlimited
+- Pawn promotion modal
+- Undo, resign, and manual save
+- Auto-save when game ends
+- Saved games list with load / delete / PGN download
+- Sound effects with on/off setting
+- Camera angle setting (white / black / top)
+- Responsive layout for desktop and mobile
+- Error boundary fallback for rendering/WebGL issues
 
-- **캣 (Orchestrator)** — 작업 분배, 프롬프트 작성, 진행 모니터링
-- **Codex (gpt-5.3-codex)** — 백엔드, 복잡한 로직, 멀티파일 리팩토링
-- **Claude Code** — 프론트엔드, git 작업, 빠른 수정
-- **Gemini Code Assist** — 자동 PR 리뷰 (GitHub App)
+## Tech Stack
 
-## Workflow
+- Vite + React + TypeScript
+- Tailwind CSS
+- Three.js + @react-three/fiber + @react-three/drei
+- chess.js
+- stockfish
+- howler
 
-1. 저스틴이 캣에게 작업 요청
-2. 캣이 복잡도 판단 → 적절한 에이전트 spawn
-3. 에이전트가 worktree에서 작업 → PR 생성
-4. CI + 코드 리뷰 자동 실행
-5. 저스틴이 최종 확인 → merge
+## Development
+
+```bash
+npm install
+npm run dev
+```
+
+Open `http://localhost:5173`.
+
+## Build
+
+```bash
+npm run build
+npm run preview
+```
+
+## Persistence
+
+Local storage keys:
+
+- `fancy-chess-settings`
+- `fancy-chess-saved-games`
+
+Saved games are capped at 50 entries (oldest removed first).
+
+## Deployment
+
+Configured for Vercel static deployment using `vercel.json`:
+
+- COOP/COEP headers
+- SPA rewrite to `/index.html`
