@@ -368,18 +368,15 @@ export function useChessGame(): {
 
   const undoMove = useCallback(() => {
     setGameState((prev) => {
-      const chess = new Chess(prev.chess.fen());
-      const firstUndo = chess.undo();
-      if (!firstUndo) {
+      if (prev.moveHistory.length < 2) {
         return prev;
       }
 
-      chess.undo();
+      const targetFen = prev.moveHistory[prev.moveHistory.length - 2];
+      const chess = new Chess(targetFen);
       const status = deriveStatus(chess);
       const endState = deriveEndState(chess, status);
-      const history = [...prev.moveHistory];
-      history.pop();
-      history.pop();
+      const history = prev.moveHistory.slice(0, -2);
       return {
         ...prev,
         chess,

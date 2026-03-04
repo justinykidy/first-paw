@@ -89,7 +89,7 @@ function AppContent() {
 
   useEffect(() => {
     const history = gameState.chess.history({ verbose: true });
-    const currentCount = history.length;
+    const currentCount = gameState.moveHistory.length;
 
     if (currentCount > lastMoveCountRef.current) {
       const lastMove = history[history.length - 1];
@@ -101,7 +101,7 @@ function AppContent() {
     }
 
     lastMoveCountRef.current = currentCount;
-  }, [gameState.chess, playCapture, playMove]);
+  }, [gameState.chess, gameState.moveHistory.length, playCapture, playMove]);
 
   useEffect(() => {
     if (gameState.status === 'check' && lastStatusRef.current !== 'check') {
@@ -161,7 +161,7 @@ function AppContent() {
               onResign={resignGame}
               onSave={saveCurrentGame}
               hintsRemaining={gameState.hintsRemaining}
-              canUndo={gameState.chess.history().length > 0}
+              canUndo={gameState.moveHistory.length >= 2}
               status={gameState.status}
             />
             <Timer playerTimeMs={gameState.playerTimeMs} aiTimeMs={gameState.aiTimeMs} />
