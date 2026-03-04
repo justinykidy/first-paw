@@ -227,7 +227,7 @@ export function useChessGame(): {
     setGameState((prev) => {
       // Terminal state guard — don't apply moves if game is already over
       if (prev.status !== 'playing' && prev.status !== 'check') {
-        return prev;
+        return prev.promotionPending ? { ...prev, promotionPending: null } : prev;
       }
 
       const fenBefore = prev.chess.fen();
