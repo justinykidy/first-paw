@@ -18,7 +18,7 @@ const createSoundPack = (): SoundPack => {
       volume: 0.8,
       preload: true,
       html5: false,
-      onloaderror: (_id, error) => {
+      onloaderror: (_id: number, error: unknown) => {
         console.error(`Sound load failed: ${path}`, error);
       },
     });

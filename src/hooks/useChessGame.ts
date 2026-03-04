@@ -1,4 +1,4 @@
-import { Chess } from 'chess.js';
+import { Chess, type Square } from 'chess.js';
 import { useCallback, useEffect, useMemo, useRef, useState } from 'react';
 
 import { useStockfish } from './useStockfish';
@@ -15,7 +15,7 @@ const TIMER_TO_MS: Record<TimerMode, number> = {
 
 const isPromotionMove = (from: string, to: string, fen: string): boolean => {
   const chess = new Chess(fen);
-  const piece = chess.get(from);
+  const piece = chess.get(from as Square);
   if (!piece || piece.type !== 'p') {
     return false;
   }
@@ -269,12 +269,12 @@ export function useChessGame(): {
         return prev;
       }
 
-      const selectedPiece = prev.selectedSquare ? chess.get(prev.selectedSquare) : undefined;
-      const clickedPiece = chess.get(square);
+      const selectedPiece = prev.selectedSquare ? chess.get(prev.selectedSquare as Square) : undefined;
+      const clickedPiece = chess.get(square as Square);
 
       if (prev.selectedSquare && selectedPiece) {
-        const validTargets = chess.moves({ square: prev.selectedSquare, verbose: true }).map((move) => move.to);
-        if (validTargets.includes(square)) {
+        const validTargets = chess.moves({ square: prev.selectedSquare as Square, verbose: true }).map((move) => move.to);
+        if (validTargets.includes(square as Square)) {
           window.setTimeout(() => {
             makeMove(prev.selectedSquare!, square);
           }, 0);
@@ -295,7 +295,7 @@ export function useChessGame(): {
         };
       }
 
-      const validMoves = chess.moves({ square, verbose: true }).map((move) => move.to);
+      const validMoves = chess.moves({ square: square as Square, verbose: true }).map((move) => move.to);
       return {
         ...prev,
         selectedSquare: square,

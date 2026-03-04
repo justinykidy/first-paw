@@ -1,6 +1,6 @@
 import { OrbitControls } from '@react-three/drei';
 import { Canvas } from '@react-three/fiber';
-import { Chess } from 'chess.js';
+import { Chess, type Square } from 'chess.js';
 import { useMemo } from 'react';
 
 import { HintArrow3D } from './HintArrow3D';
@@ -54,7 +54,7 @@ const findCheckedKingSquare = (fen: string): string | null => {
   for (let rank = 1; rank <= 8; rank += 1) {
     for (let fileIndex = 0; fileIndex < files.length; fileIndex += 1) {
       const square = `${files[fileIndex]}${rank}`;
-      const piece = chess.get(square);
+      const piece = chess.get(square as Square);
       if (piece?.type === 'k' && piece.color === sideToMove) {
         return square;
       }

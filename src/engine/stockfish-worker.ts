@@ -1,4 +1,4 @@
-import createStockfish from 'stockfish';
+import createStockfish from 'stockfish/src/stockfish-nnue-16.js';
 
 import type { SearchOptions } from '../types';
 
