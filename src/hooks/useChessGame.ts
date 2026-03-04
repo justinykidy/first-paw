@@ -370,6 +370,8 @@ export function useChessGame(): {
       }
 
       chess.undo();
+      const status = deriveStatus(chess);
+      const endState = deriveEndState(chess, status);
       const history = [...prev.moveHistory];
       history.pop();
       history.pop();
@@ -381,16 +383,20 @@ export function useChessGame(): {
         validMoves: [],
         lastMove: null,
         promotionPending: null,
-        status: 'playing',
-        winner: null,
-        endReason: null,
+        status,
+        winner: endState.winner,
+        endReason: endState.endReason,
       };
     });
   }, []);
 
   const requestHint = useCallback(() => {
     const snapshot = gameRef.current;
-    if (snapshot.hintsRemaining <= 0) {
+    if (
+      snapshot.hintsRemaining <= 0 ||
+      (snapshot.status !== 'playing' && snapshot.status !== 'check') ||
+      snapshot.chess.turn() !== snapshot.playerColor
+    ) {
       return;
     }
 
@@ -416,7 +422,7 @@ export function useChessGame(): {
 
   const resignGame = useCallback(() => {
     setGameState((prev) => {
-      if ((prev.status !== 'playing' && prev.status !== 'check') || prev.chess.turn() !== prev.playerColor) {
+      if (prev.status !== 'playing' && prev.status !== 'check') {
         return prev;
       }
 

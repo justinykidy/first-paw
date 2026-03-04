@@ -76,6 +76,15 @@ export function Board3D({
   hint,
 }: Board3DProps) {
   const pieces = useMemo(() => fenToPieces(fen), [fen]);
+  const pieceKeys = useMemo(() => {
+    const counters = new Map<string, number>();
+    return pieces.map((piece) => {
+      const identity = `${piece.type}-${piece.color}`;
+      const count = counters.get(identity) ?? 0;
+      counters.set(identity, count + 1);
+      return `${identity}-${count}`;
+    });
+  }, [pieces]);
   const checkedKingSquare = useMemo(() => findCheckedKingSquare(fen), [fen]);
 
   return (
@@ -102,8 +111,8 @@ export function Board3D({
             />
           ))}
 
-          {pieces.map((piece) => (
-            <Piece3D key={`${piece.square}-${piece.type}-${piece.color}`} square={piece.square} type={piece.type} color={piece.color} />
+          {pieces.map((piece, index) => (
+            <Piece3D key={pieceKeys[index]} square={piece.square} type={piece.type} color={piece.color} />
           ))}
 
           {hint ? <HintArrow3D from={hint.from} to={hint.to} /> : null}
