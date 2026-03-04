@@ -225,6 +225,11 @@ export function useChessGame(): {
 
   const makeMove = useCallback((from: string, to: string, promotion?: string) => {
     setGameState((prev) => {
+      // Terminal state guard — don't apply moves if game is already over
+      if (prev.status !== 'playing' && prev.status !== 'check') {
+        return prev;
+      }
+
       const fenBefore = prev.chess.fen();
 
       if (!promotion && isPromotionMove(from, to, fenBefore)) {
