@@ -3,7 +3,7 @@ import type { Chess } from 'chess.js';
 // Shared type definitions for Fancy Chess state and persistence.
 export type Difficulty = 'easy' | 'medium' | 'hard' | 'hell';
 export type TimerMode = '3min' | '5min' | '10min' | 'unlimited';
-export type GameStatus = 'idle' | 'playing' | 'check' | 'checkmate' | 'stalemate' | 'draw' | 'timeout';
+export type GameStatus = 'idle' | 'playing' | 'check' | 'checkmate' | 'stalemate' | 'draw' | 'timeout' | 'resigned';
 export type GameEndReason = 'checkmate' | 'stalemate' | 'draw' | 'resign' | 'timeout';
 
 export interface HintData {

@@ -22,7 +22,7 @@ export function GameControls({
   canUndo,
   status,
 }: GameControlsProps) {
-  const finished = status === 'checkmate' || status === 'stalemate' || status === 'draw' || status === 'timeout';
+  const finished = status === 'checkmate' || status === 'stalemate' || status === 'draw' || status === 'timeout' || status === 'resigned';
 
   return (
     <section className="space-y-2 rounded-xl border border-slate-700 bg-slate-900/70 p-4">

@@ -10,19 +10,21 @@ import { SettingsPanel } from './components/SettingsPanel';
 import { Timer } from './components/Timer';
 import { useChessGame } from './hooks/useChessGame';
 import { useSound } from './hooks/useSound';
+import type { GameStatus } from './types';
 import { storage } from './utils/storage';
 import type { Difficulty, SavedGame, TimerMode } from './types';
 
 // Top-level app shell for Fancy Chess.
-const isTerminalStatus = (status: string): boolean => {
-  return status === 'checkmate' || status === 'stalemate' || status === 'draw' || status === 'timeout';
+const isTerminalStatus = (status: GameStatus): boolean => {
+  return status === 'checkmate' || status === 'stalemate' || status === 'draw' || status === 'timeout' || status === 'resigned';
 };
 
-const statusText = (status: string): string => {
+const statusText = (status: GameStatus): string => {
   if (status === 'checkmate') return 'Checkmate';
   if (status === 'stalemate') return 'Stalemate';
   if (status === 'draw') return 'Draw';
   if (status === 'timeout') return 'Timeout';
+  if (status === 'resigned') return 'Resigned';
   if (status === 'check') return 'Check';
   if (status === 'playing') return 'Playing';
   return 'Idle';

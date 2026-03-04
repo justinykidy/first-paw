@@ -184,8 +184,13 @@ export function useChessGame(): {
     }
 
     try {
+      const requestedFen = snapshot.chess.fen();
       const move = await getBestMove(snapshot.chess.fen(), snapshot.difficulty);
       setGameState((prev) => {
+        if ((prev.status !== 'playing' && prev.status !== 'check') || prev.chess.fen() !== requestedFen) {
+          return prev;
+        }
+
         const chess = new Chess(prev.chess.fen());
         const from = move.from;
         const to = move.to;
@@ -417,7 +422,7 @@ export function useChessGame(): {
 
       return {
         ...prev,
-        status: 'checkmate',
+        status: 'resigned',
         winner: prev.playerColor === 'w' ? 'b' : 'w',
         endReason: 'resign',
       };

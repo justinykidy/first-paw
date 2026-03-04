@@ -17,6 +17,7 @@ const labels: Record<GameStatus, string> = {
   stalemate: 'Stalemate',
   draw: 'Draw',
   timeout: 'Timeout',
+  resigned: 'Resigned',
 };
 
 const initialCounts: Record<'w' | 'b', Record<string, number>> = {
